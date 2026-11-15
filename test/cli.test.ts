@@ -99,6 +99,20 @@ describe('check command', () => {
     expect(out).toContain('1 fixable');
   });
 
+  it('a file outside the current folder gets guidance, not undefined:undefined', async () => {
+    const dir = project();
+    const other = project();
+    const outside = join(other, 'src', 'bad.js');
+    for (const [lang, phrase] of [['en', 'outside the current folder'], ['ko', '현재 폴더 밖']] as const) {
+      const { code, out, err } = await run(['check', outside, '--lang', lang], dir);
+      expect(code).toBe(0);
+      expect(err).toContain(phrase);
+      expect(`${out}${err}`).not.toContain('undefined:undefined');
+      expect(`${out}${err}`).not.toContain('parse-error');
+      expect(out).not.toContain('llm-call/');
+    }
+  });
+
   it('exits 0 for a clean file', async () => {
     const dir = project();
     const { code, out } = await run(['check', 'src/good.js'], dir);

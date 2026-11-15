@@ -30,6 +30,9 @@ const cases: Record<string, string> = {
   'reasoning effort is a variable': `${OPENAI} c.chat.completions.create({ model: 'gpt-5.1', reasoning_effort: effort, temperature: 1 });`,
   'client name shadowed by a function parameter': `${OPENAI} function f(c) { return c.chat.completions.create({ model: 'o3', max_tokens: 5 }); }`,
   'client name shadowed by a local of another origin': `${OPENAI} function f() { const c = other(); return c.chat.completions.create({ model: 'o3', max_tokens: 5 }); }`,
+  'client variable reassigned to something else': `import OpenAI from 'openai'; let c = new OpenAI(); c = makeClient(); c.chat.completions.create({ model: 'o4-mini', max_tokens: 5 });`,
+  'client variable reassigned to another SDK': `import OpenAI from 'openai'; import Anthropic from '@anthropic-ai/sdk'; let c = new OpenAI(); c = new Anthropic(); c.chat.completions.create({ model: 'o4-mini', max_tokens: 5 });`,
+  'this.client reassigned to something else': `${OPENAI} class K { constructor() { this.client = new OpenAI(); } swap(x) { this.client = x; } run() { return this.client.chat.completions.create({ model: 'o4-mini', max_tokens: 5 }); } }`,
   'argument is not an object literal': `${OPENAI} c.chat.completions.create(params);`,
   'computed key might be anything': `${OPENAI} c.chat.completions.create({ model: 'o4-mini', [key]: 5 });`,
   'json mode with a message from a variable': `${OPENAI} c.chat.completions.create({ model: 'gpt-4o', response_format: { type: 'json_object' }, messages: [{ role: 'user', content: question }] });`,
@@ -51,6 +54,11 @@ describe('silence when unsure', () => {
   it('control: the same anthropic call IS reported once SDK 1.x is found', () => {
     const code = `${ANTHROPIC} a.messages.create({ model: 'claude-opus-5-5', max_tokens: 5, temperature: 1 });`;
     expect(lint(code, sdk1).map((m) => m.ruleId)).toEqual(['llm-call/no-unsupported-param']);
+  });
+
+  it('control: a client reassigned to a new client of the same SDK is still checked', () => {
+    const code = `import OpenAI from 'openai'; let c = new OpenAI(); c = new OpenAI({ apiKey: 'x' }); c.chat.completions.create({ model: 'o4-mini', max_tokens: 5 });`;
+    expect(lint(code).map((m) => m.ruleId)).toEqual(['llm-call/no-unsupported-param']);
   });
 
   it('control: a known reasoning model IS reported', () => {

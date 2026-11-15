@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { existsSync, readdirSync, realpathSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { extname, join, relative, resolve } from 'node:path';
+import { extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { BUILTIN_MODELS, type ModelRule } from './core/model-table.js';
 import { PACKAGE_VERSION } from './core/pkg.js';
@@ -147,11 +147,25 @@ async function loadTypeScriptParser(cwd: string): Promise<unknown | undefined> {
   }
 }
 
-async function checkCommand(parsed: Parsed, lang: Lang, io: Io): Promise<number> {
+async function checkCommand(parsedIn: Parsed, lang: Lang, io: Io): Promise<number> {
+  let parsed = parsedIn;
   if (parsed.paths.length === 0) {
     io.err(t(lang, 'cli.checkNeedsPaths'));
     return 2;
   }
+  // ESLint only lints files under its base path; a path outside the current folder would yield a
+  // message without a line or rule, so tell the user to run from a parent folder instead.
+  const inside: string[] = [];
+  for (const p of parsed.paths) {
+    const rel = relative(io.cwd, resolve(io.cwd, p));
+    if (rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
+      io.err(t(lang, 'cli.outsideCwd', { path: p }));
+    } else {
+      inside.push(p);
+    }
+  }
+  if (inside.length === 0) return 0;
+  parsed = { ...parsed, paths: inside };
   // Rule messages are fixed when the plugin module loads, so choose the language first.
   process.env.LLM_CALL_LINT_LANG = lang;
   let eslintModule: typeof import('eslint');

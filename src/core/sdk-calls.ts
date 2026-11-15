@@ -114,6 +114,8 @@ function newExprProvider(init: Node, ctors: Map<string, Provider>): Provider | u
 
 function collectClients(root: Node, ctors: Map<string, Provider>, visitorKeys: Record<string, readonly string[]>): Map<string, Provider> {
   const clients = new Map<string, Provider>();
+  // Keys that are also assigned something we cannot prove is an SDK client (or a different SDK): stay silent.
+  const tainted = new Set<string>();
   const visit = (n: Node): void => {
     if (!n || typeof n.type !== 'string') return;
     let key: string | undefined;
@@ -130,7 +132,14 @@ function collectClients(root: Node, ctors: Map<string, Provider>, visitorKeys: R
     }
     if (key && init) {
       const provider = newExprProvider(init, ctors);
-      if (provider) clients.set(key, provider);
+      const reassigned = n.type === 'AssignmentExpression' || n.type === 'VariableDeclarator';
+      if (!provider) {
+        if (reassigned) tainted.add(key);
+      } else {
+        const previous = clients.get(key);
+        if (previous !== undefined && previous !== provider) tainted.add(key);
+        clients.set(key, provider);
+      }
     }
     const keys = visitorKeys[n.type] ?? Object.keys(n).filter((k) => k !== 'parent');
     for (const k of keys) {
@@ -140,6 +149,7 @@ function collectClients(root: Node, ctors: Map<string, Provider>, visitorKeys: R
     }
   };
   visit(root);
+  for (const key of tainted) clients.delete(key);
   return clients;
 }
 

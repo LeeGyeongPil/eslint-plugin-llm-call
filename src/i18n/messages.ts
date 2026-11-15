@@ -67,6 +67,8 @@ const en = {
   'cli.noTsParser':
     "Skipped {{count}} TypeScript file(s): install '@typescript-eslint/parser' in this project to lint .ts/.tsx files.",
   'cli.noEslint': "Could not load 'eslint'. Install it (npm i -D eslint) and run the command again.",
+  'cli.outsideCwd':
+    "Skipped '{{path}}': it is outside the current folder. Run the command from a parent folder that contains it (cd to it first).",
   'cli.noProblems': 'No problems found.',
   'cli.summary': 'Found {{count}} problem(s) in {{files}} file(s).',
   'cli.fixable': '{{count}} fixable with `eslint --fix`.',
@@ -139,6 +141,8 @@ const ko: Record<MessageKey, string> = {
   'cli.noTsParser':
     "TypeScript 파일 {{count}}개를 건너뛰었습니다. .ts/.tsx 를 검사하려면 이 프로젝트에 '@typescript-eslint/parser'를 설치하세요.",
   'cli.noEslint': "'eslint'를 불러오지 못했습니다. 설치(npm i -D eslint)한 뒤 다시 실행하세요.",
+  'cli.outsideCwd':
+    "'{{path}}' 은(는) 현재 폴더 밖이라 건너뛰었습니다. 그 파일을 포함하는 상위 폴더로 이동한 뒤 다시 실행하세요.",
   'cli.noProblems': '문제가 없습니다.',
   'cli.summary': '파일 {{files}}개에서 문제 {{count}}건을 찾았습니다.',
   'cli.fixable': '{{count}}건은 `eslint --fix` 로 고칠 수 있습니다.',
