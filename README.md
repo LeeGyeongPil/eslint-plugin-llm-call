@@ -37,7 +37,7 @@ What `no-unsupported-param` knows today (snapshot dated 2026-11-16):
 
 | Host | Version checked | Notes |
 |---|---|---|
-| Node.js | 20.19 (build and pack smoke test), 22 and 24 (full test suite) | CI runs both |
+| Node.js | 22.13+ and 24+ (CI runs 22, 24 and 26) | Node 20 is end-of-life; `engines` is `^22.13.0 || >=24` |
 | ESLint | 10.15.0 (peer range `^9.0.0 \|\| ^10.0.0`) | Flat config only |
 | TypeScript files | `@typescript-eslint/parser` 8.72.2 | Needed only to lint `.ts`; plain `.js` works with the default parser |
 | `openai` / `@anthropic-ai/sdk` | 7.57.0 / 1.8.0 (dev dependencies, used by the demo) | Your project needs them only to import; the plugin reads the code, not the packages, except to detect the Anthropic SDK major version |

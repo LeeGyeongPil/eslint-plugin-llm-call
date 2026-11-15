@@ -37,7 +37,7 @@ OpenAI·Anthropic SDK 호출을 읽어서, TypeScript 는 통과시키지만 API
 
 | 호스트 | 확인한 버전 | 비고 |
 |---|---|---|
-| Node.js | 20.19(빌드·팩 스모크 테스트), 22·24(전체 테스트) | CI 가 둘 다 돌립니다 |
+| Node.js | 22.13 이상, 24 이상 (CI 는 22·24·26 을 돌립니다) | Node 20 은 지원 종료라 `engines` 는 `^22.13.0 || >=24` 입니다 |
 | ESLint | 10.15.0 (peer 범위 `^9.0.0 \|\| ^10.0.0`) | flat config 만 지원 |
 | TypeScript 파일 | `@typescript-eslint/parser` 8.72.2 | `.ts` 검사에만 필요, `.js` 는 기본 파서로 됩니다 |
 | `openai` / `@anthropic-ai/sdk` | 7.57.0 / 1.8.0 (데모용 개발 의존성) | 플러그인은 코드를 읽을 뿐 패키지를 쓰지 않습니다. 단 Anthropic SDK 메이저 버전을 알아낼 때만 읽습니다 |
