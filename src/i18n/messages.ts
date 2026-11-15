@@ -69,6 +69,14 @@ const en = {
   'cli.noEslint': "Could not load 'eslint'. Install it (npm i -D eslint) and run the command again.",
   'cli.outsideCwd':
     "Skipped '{{path}}': it is outside the current folder. Run the command from a parent folder that contains it (cd to it first).",
+  'cli.noFiles': "No files matching '{{path}}' were found. Check the path or run from the project folder.",
+  'cli.allIgnored':
+    "Nothing to check under '{{path}}': every file there is ignored (node_modules/, dist/) or is not a .js/.mjs/.cjs/.jsx file (.ts/.tsx need '@typescript-eslint/parser').",
+  'cli.ignoredFile': "Skipped '{{path}}': files under node_modules/ and dist/ are not checked.",
+  'cli.unsupportedFile':
+    "Skipped '{{path}}': not a file type this command checks (.js, .mjs, .cjs, .jsx; .ts/.tsx with '@typescript-eslint/parser').",
+  'cli.parseError': 'Could not parse this file (parser says: {{detail}})',
+  'cli.eslintError': 'ESLint stopped with an error (original message: {{message}})',
   'cli.noProblems': 'No problems found.',
   'cli.summary': 'Found {{count}} problem(s) in {{files}} file(s).',
   'cli.fixable': '{{count}} fixable with `eslint --fix`.',
@@ -143,6 +151,14 @@ const ko: Record<MessageKey, string> = {
   'cli.noEslint': "'eslint'를 불러오지 못했습니다. 설치(npm i -D eslint)한 뒤 다시 실행하세요.",
   'cli.outsideCwd':
     "'{{path}}' 은(는) 현재 폴더 밖이라 건너뛰었습니다. 그 파일을 포함하는 상위 폴더로 이동한 뒤 다시 실행하세요.",
+  'cli.noFiles': "'{{path}}' 에 해당하는 파일이 없습니다. 경로를 확인하거나 프로젝트 폴더에서 실행하세요.",
+  'cli.allIgnored':
+    "'{{path}}' 에는 검사할 파일이 없습니다. 모두 제외 대상(node_modules/, dist/)이거나 .js/.mjs/.cjs/.jsx 파일이 아닙니다(.ts/.tsx 는 '@typescript-eslint/parser' 필요).",
+  'cli.ignoredFile': "'{{path}}' 은(는) 건너뛰었습니다. node_modules/ 와 dist/ 아래 파일은 검사하지 않습니다.",
+  'cli.unsupportedFile':
+    "'{{path}}' 은(는) 건너뛰었습니다. 이 명령이 검사하는 파일 형식이 아닙니다(.js, .mjs, .cjs, .jsx, '@typescript-eslint/parser'가 있으면 .ts/.tsx).",
+  'cli.parseError': '이 파일을 해석하지 못했습니다(파서 원문: {{detail}})',
+  'cli.eslintError': 'ESLint 가 오류로 멈췄습니다(원문: {{message}})',
   'cli.noProblems': '문제가 없습니다.',
   'cli.summary': '파일 {{files}}개에서 문제 {{count}}건을 찾았습니다.',
   'cli.fixable': '{{count}}건은 `eslint --fix` 로 고칠 수 있습니다.',

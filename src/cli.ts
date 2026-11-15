@@ -111,6 +111,22 @@ function tableCommand(parsed: Parsed, lang: Lang, io: Io): number {
 }
 
 const TS_EXTENSIONS = new Set(['.ts', '.tsx', '.mts', '.cts']);
+const JS_EXTENSIONS = new Set(['.js', '.mjs', '.cjs', '.jsx']);
+
+/**
+ * Turn an error thrown by `ESLint#lintFiles` into a message in the chosen language.
+ * ESLint marks its path errors with `messageTemplate` (see eslint/lib/eslint/eslint-helpers.js):
+ * 'file-not-found' (path or glob matches nothing) and 'all-matched-files-ignored'
+ * (a folder holds only ignored or unsupported files). Anything else keeps the original text
+ * inside a translated sentence so the cause is not lost.
+ */
+export function describeLintError(error: unknown, lang: Lang): string {
+  const info = (error ?? {}) as { messageTemplate?: unknown; messageData?: { pattern?: unknown } };
+  const pattern = typeof info.messageData?.pattern === 'string' ? info.messageData.pattern : '';
+  if (info.messageTemplate === 'file-not-found') return t(lang, 'cli.noFiles', { path: pattern });
+  if (info.messageTemplate === 'all-matched-files-ignored') return t(lang, 'cli.allIgnored', { path: pattern });
+  return t(lang, 'cli.eslintError', { message: error instanceof Error ? error.message : String(error) });
+}
 
 function countTypeScriptFiles(paths: string[], cwd: string): number {
   let count = 0;
@@ -190,6 +206,9 @@ async function checkCommand(parsedIn: Parsed, lang: Lang, io: Io): Promise<numbe
   if (tsParser) {
     config.push({ files: ['**/*.{ts,tsx,mts,cts}'], languageOptions: { parser: tsParser } });
   }
+  // This command runs only llm-call rules, so `// eslint-disable-line no-console` style comments
+  // for other rules would all look "unused". Do not report them (ESLint 9+ warns by default).
+  config.push({ linterOptions: { reportUnusedDisableDirectives: 'off' } });
   config.push(plugin.configs.recommended);
 
   const eslint = new ESLint({
@@ -201,22 +220,48 @@ async function checkCommand(parsedIn: Parsed, lang: Lang, io: Io): Promise<numbe
   try {
     results = await eslint.lintFiles(parsed.paths);
   } catch (error) {
-    io.err(error instanceof Error ? error.message : String(error));
+    // ESLint's own errors are English; translate the ones a user can cause by typing a path.
+    io.err(describeLintError(error, lang));
     return 2;
   }
 
+  // Only our own rule messages and parse errors are problems. Everything else ESLint adds
+  // (inline comments naming rules of plugins that are not loaded here, ignored-file warnings)
+  // is about the user's other ESLint setup, not about LLM calls, and would only leak English text.
+  const ownRules = new Set(Object.keys(plugin.rules).map((name) => `llm-call/${name}`));
+  const lintable = tsParser ? new Set([...JS_EXTENSIONS, ...TS_EXTENSIONS]) : JS_EXTENSIONS;
   let problems = 0;
   let fixable = 0;
   let files = 0;
   for (const result of results) {
-    if (result.messages.length === 0) continue;
-    files++;
     const file = relative(io.cwd, result.filePath) || result.filePath;
+    let fileHasProblem = false;
     for (const m of result.messages) {
+      if (m.line === undefined) {
+        // ESLint returns a line-less warning for a file it did not lint (an explicitly named
+        // file that is ignored or has no matching config). Say why we skipped it instead.
+        const ext = extname(result.filePath);
+        if (!tsParser && TS_EXTENSIONS.has(ext)) continue; // counted in the cli.noTsParser line
+        io.err(t(lang, lintable.has(ext) ? 'cli.ignoredFile' : 'cli.unsupportedFile', { path: file }));
+        continue;
+      }
+      let text: string;
+      let label: string;
+      if (m.fatal) {
+        label = 'parse-error';
+        text = t(lang, 'cli.parseError', { detail: m.message.replace(/^Parsing error:\s*/, '') });
+      } else if (m.ruleId && ownRules.has(m.ruleId)) {
+        label = m.ruleId;
+        text = m.message;
+      } else {
+        continue;
+      }
       problems++;
+      fileHasProblem = true;
       if (m.fix) fixable++;
-      io.out(`${file}:${m.line}:${m.column}  ${m.ruleId ?? 'parse-error'}  ${m.message}`);
+      io.out(`${file}:${m.line}:${m.column}  ${label}  ${text}`);
     }
+    if (fileHasProblem) files++;
   }
   if (!tsParser) {
     const skipped = countTypeScriptFiles(parsed.paths, io.cwd);
@@ -259,7 +304,15 @@ export async function main(argv: string[], io?: Partial<Io>): Promise<number> {
     return parsed.help ? 0 : 2;
   }
   if (parsed.command === 'table') return tableCommand(parsed, lang, full);
-  if (parsed.command === 'check') return checkCommand(parsed, lang, full);
+  if (parsed.command === 'check') {
+    try {
+      return await checkCommand(parsed, lang, full);
+    } catch (error) {
+      // Unexpected failure (for example a broken parser install): still answer in the chosen language.
+      full.err(describeLintError(error, lang));
+      return 2;
+    }
+  }
   full.err(t(lang, 'cli.unknownCommand', { command: parsed.command }));
   return 2;
 }
