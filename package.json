@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-llm-call",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "ESLint plugin that catches model- and SDK-version-specific parameter mistakes in OpenAI and Anthropic SDK calls before they return HTTP 400.",
   "keywords": [
     "eslint",
@@ -33,11 +33,13 @@
     "LICENSE"
   ],
   "engines": {
-    "node": ">=20.19"
+    "node": "^22.13.0 || >=24"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/copy-data.mjs",
     "test": "vitest run",
+    "verify": "npm run build && npm test && npm run demo",
+    "ci:repro": "node scripts/ci-repro.mjs",
     "demo": "npm run build && node scripts/demo.mjs",
     "smoke:pack": "node scripts/smoke-pack.mjs",
     "prepare": "npm run build"
@@ -53,5 +55,8 @@
     "openai": "7.57.0",
     "typescript": "6.0.3",
     "vitest": "5.1.0"
+  },
+  "overrides": {
+    "minimatch": "11.0.8"
   }
 }

@@ -5,6 +5,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-16
+
+### Security
+- Pin `minimatch` to 11.0.8 through `overrides` (GHSA-g3hv-75wg-m249, fixed in 11.0.1). It is a transitive dev dependency of `@typescript-eslint/typescript-estree`; the published plugin code is unchanged.
+
+### Fixed
+- Stay silent when a client variable is reassigned to something that is not provably the same SDK client.
+- `check` now tells you to run from a parent folder when a path is outside the current folder, instead of printing a message without a line or rule.
+
+### Changed
+- `engines.node` is `^22.13.0 || >=24` (Node 20 is end-of-life); CI runs Node 22, 24 and 26 through `npm run verify`.
+- Added `npm run ci:repro` to reproduce the CI job locally.
+
 
 ## [0.1.0] - 2026-11-16
 
