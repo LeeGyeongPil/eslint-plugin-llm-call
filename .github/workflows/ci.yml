@@ -1,4 +1,5 @@
 # Key-free: the plugin only reads source code, so tests, demo and pack smoke need no secrets.
+# `npm run ci:repro` runs the same `run:` lines locally from a clean copy of the committed files.
 name: ci
 on:
   push:
@@ -8,12 +9,12 @@ on:
   workflow_dispatch:
 jobs:
   test:
-    # vitest 5 needs Node >= 22.12, so the test suite runs on 22 and 24.
+    # vitest 5 needs Node >= 22.12; Node 20 is end-of-life, so the matrix is the supported majors.
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        node: [22.x, 24.x]
+        node: [22.x, 24.x, 26.x]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -21,19 +22,5 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: npm
       - run: npm ci
-      - run: npm test
-      - run: npm run build
-      - run: npm run demo
-      - run: npm run smoke:pack
-  node20-runtime:
-    # The published package supports Node >= 20.19: build it and lint with it on the oldest supported runtime.
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 20.x
-          cache: npm
-      - run: npm ci --ignore-scripts
-      - run: npm run build
+      - run: npm run verify
       - run: npm run smoke:pack
