@@ -2,6 +2,8 @@
 
 [English](README.md) | **한국어**
 
+[![npm](https://img.shields.io/npm/v/eslint-plugin-llm-call)](https://www.npmjs.com/package/eslint-plugin-llm-call) [![CI](https://github.com/LeeGyeongPil/eslint-plugin-llm-call/actions/workflows/ci.yml/badge.svg)](https://github.com/LeeGyeongPil/eslint-plugin-llm-call/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 OpenAI·Anthropic SDK 호출을 읽어서, TypeScript 는 통과시키지만 API 는 HTTP 400 으로 거절하는 매개변수 실수를 잡아 주는 ESLint 플러그인입니다. 추론 모델의 `max_tokens`, 거부되는 `temperature`, "JSON" 낱말 없는 JSON 모드, `additionalProperties: false` 가 빠진 strict 스키마 같은 것들입니다. 모델이 무엇인지 알 수 없으면 아무 말도 하지 않습니다.
 
 ![연습용 데모: 같은 파일에서 tsc 는 1건, llm-call 은 8건을 보고](docs/images/01-demo.ko.png)
@@ -31,13 +33,13 @@ OpenAI·Anthropic SDK 호출을 읽어서, TypeScript 는 통과시키지만 API
 | OpenAI `o*`, `gpt-5` (`gpt-5-chat*` 제외) | `temperature`, `top_p` |
 | OpenAI `gpt-5.1` 이후 | `reasoning_effort`(또는 `reasoning.effort`)가 `'none'` 이 아닌 리터럴로 적혀 있을 때만 `temperature`, `top_p`. 없거나 리터럴이 아니면 침묵 |
 | Anthropic SDK 1.x (API 버전 2026-10-21) | `temperature`, `top_p`, `top_k` |
-| Anthropic SDK 0.x, Opus 4.1 이후 | `temperature` 와 `top_p` 동시 사용 |
+| Anthropic SDK 0.x, Opus 4.1+, Sonnet 4.5+, Haiku 4.5+ | `temperature` 와 `top_p` 동시 사용 |
 
 ## 요구 사항
 
 | 호스트 | 확인한 버전 | 비고 |
 |---|---|---|
-| Node.js | 22.13 이상, 24 이상 (CI 는 22·24·26 을 돌립니다) | Node 20 은 지원 종료라 `engines` 는 `^22.13.0 || >=24` 입니다 |
+| Node.js | 22.13 이상, 24 이상 (CI 는 22·24·26 을 돌립니다) | Node 20 은 지원 종료라 `engines` 는 `^22.13.0 \|\| >=24` 입니다 |
 | ESLint | 10.15.0 (peer 범위 `^9.0.0 \|\| ^10.0.0`) | flat config 만 지원 |
 | TypeScript 파일 | `@typescript-eslint/parser` 8.72.2 | `.ts` 검사에만 필요, `.js` 는 기본 파서로 됩니다 |
 | `openai` / `@anthropic-ai/sdk` | 7.57.0 / 1.8.0 (데모용 개발 의존성) | 플러그인은 코드를 읽을 뿐 패키지를 쓰지 않습니다. 단 Anthropic SDK 메이저 버전을 알아낼 때만 읽습니다 |
@@ -82,6 +84,8 @@ export default [
   7:3  error  Model 'o4-mini' rejects 'max_tokens'; use 'max_completion_tokens' instead  llm-call/no-unsupported-param
 ```
 
+(뜻: 모델 `o4-mini` 는 `max_tokens` 를 거부하므로 `max_completion_tokens` 를 쓰라는 영어 메시지입니다. 메시지 언어는 아래 [언어](#언어) 절에서 바꿉니다.)
+
 `npx eslint --fix` 후 호출은 이렇게 바뀝니다(호출 하나짜리 파일에서 실제로 나온 출력).
 
 ```diff
@@ -97,8 +101,10 @@ export default [
 npx eslint-plugin-llm-call check examples/ --lang ko
 ```
 
+`examples/` 폴더는 이 저장소를 클론한 안([개발·기여](#개발기여))에만 있습니다. 내 프로젝트에서는 `src/` 처럼 자신의 폴더를 넘기세요. TypeScript 파일은 `@typescript-eslint/parser` 설치가 필요합니다.
+
 ![check 출력: 파일·줄·규칙 ID·메시지와 함께 8건 나열](docs/images/02-check.ko.png)
-*`check` 는 `파일:줄:열`, 규칙 ID, 메시지를 출력하고 하나라도 있으면 종료 코드 1 을 냅니다.*
+*`check` 는 `파일:줄:열`, 규칙 ID, 메시지를 출력합니다. 종료 코드: 0 = 문제 없음, 1 = 문제 있음(해석하지 못한 파일 포함), 2 = 해당하는 파일이 없거나 그 밖의 사용 오류.*
 
 제약 표(어떤 모델이 어떤 매개변수를 거부하는지, 행의 출처, 확인 날짜)를 보려면:
 
@@ -212,8 +218,11 @@ flowchart LR
 - 자동 수정은 키가 일반 이름이나 문자열로 적혀 있을 때만 이름을 바꿉니다. `[k]: 5` 같은 계산된 키는 보고만 하고 고치지 않습니다. 고치면 존재하지 않는 이름을 가리킬 수 있기 때문입니다.
 - strict 스키마 중첩 한도는 루트 객체를 0단계로 세고 그 아래 10단계를 넘으면 보고합니다. 문서가 루트 포함 여부를 분명히 밝히지 않아 덜 공격적인 해석을 택했습니다.
 - 같은 파일 상수만 따라갑니다. 다른 파일에 정의된 모델은 Unknown 입니다.
-- 나중에 다시 할당되는 클라이언트 변수는 처음 값으로 간주하므로, 새 클라이언트로 한 호출을 보고하거나 자동 수정할 수 있습니다.
-- 현재 폴더 밖 파일에 `check` 를 돌리면 `undefined:undefined parse-error` 가 나올 수 있습니다. 프로젝트 폴더에서 실행하세요. TypeScript 파일 `check` 는 `@typescript-eslint/parser` 설치가 필요합니다.
+- 같은 SDK 클라이언트임을 알 수 없는 값으로 다시 할당된 클라이언트 변수는 Unknown 이 되어 그 호출은 침묵합니다. 같은 SDK 의 다른 클라이언트로 다시 할당하면 계속 검사합니다.
+- 현재 폴더 밖 파일은 `check` 가 건너뛰고 안내만 낸 뒤 종료 코드 0 으로 끝납니다. 그 파일이 들어 있는 상위 폴더에서 실행하세요. TypeScript 파일 `check` 는 `@typescript-eslint/parser` 설치가 필요합니다.
+- `check` 는 `llm-call` 규칙만 돌립니다. 다른 규칙용 주석(`// eslint-disable-next-line no-console`, `/* eslint react/no-danger: 2 */`)은 무시하고 문제로 세지 않습니다. `// eslint-disable-next-line llm-call/...` 는 그대로 지킵니다.
+- 검사 대상이 아닌 파일(`node_modules/`·`dist/` 아래, JavaScript 가 아닌 파일)은 stderr 에 짧은 안내만 내고 문제로 세지 않습니다.
+- `--lang ko` 여도 두 가지는 영어로 남습니다: 구문 오류의 파서 원문(예: `Unexpected token ;`)과 잘못된 인라인 규칙 옵션에 대한 ESLint 메시지.
 
 ## 자주 겪는 문제
 
@@ -223,6 +232,8 @@ flowchart LR
 | Anthropic `temperature` 가 전혀 보고되지 않음 | `node_modules` 에서 SDK 버전을 찾지 못함 | `@anthropic-ai/sdk` 를 설치하거나 `settings.llmCall.anthropicSdkMajor` 지정 |
 | `check` 가 `.ts` 파일을 건너뜀 | 프로젝트에 `@typescript-eslint/parser` 가 없음 | `npm install --save-dev @typescript-eslint/parser`, 또는 자체 설정으로 ESLint 사용 |
 | 편집기에서 메시지가 영어로만 나옴 | 언어는 플러그인이 로드될 때 읽음 | `LLM_CALL_LINT_LANG=ko` 를 설정하고 편집기나 ESLint 를 시작 |
+| `check` 가 `'...' 에 해당하는 파일이 없습니다` 를 내고 종료 코드 2 | 경로가 없거나, 폴더가 비었거나, glob 이 아무것도 못 찾음 | 경로를 확인하거나 프로젝트 폴더에서 실행 |
+| `check` 가 `parse-error` 를 보고 | 파일에 구문 오류가 있거나, TypeScript 를 기본 파서로 읽음 | 파서 원문이 가리키는 구문을 고치고, `.ts` 면 `@typescript-eslint/parser` 설치 |
 | 내 모델에 행이 틀려 보임 | 표는 날짜가 붙은 스냅샷 | `settings.llmCall.models` 에 같은 `id` 의 행을 추가하거나 `disable` 에 id 추가 |
 
 ## 개발·기여
@@ -231,8 +242,10 @@ flowchart LR
 git clone https://github.com/LeeGyeongPil/eslint-plugin-llm-call.git
 cd eslint-plugin-llm-call
 npm install
-npm test          # 테스트 147개 (Node 22.12 이상 필요)
+npm test          # 테스트 실행 (Node 22.13 이상 필요)
 npm run demo      # 연습용 데모. 언어는 --lang, LLM_CALL_LINT_LANG, LANG 순 (-- --lang en|ko 로 지정)
+npm run verify    # 빌드 + 테스트 + 데모를 한 번에
+npm run ci:repro  # git 이 추적하는 파일(작업 폴더 내용, 새 파일은 먼저 `git add`)만 깨끗한 폴더에 복사해 CI 단계를 다시 실행
 npm run smoke:pack
 ```
 

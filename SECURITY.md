@@ -4,4 +4,4 @@
 
 If you find a security issue, please **do not open a public issue**. Use **Security → Report a vulnerability** in this repository to report it privately. We will reply after checking and announce the fix with a release.
 
-이 레포는 학습용 데모입니다. 기본 설정은 내 컴퓨터(127.0.0.1)에서만 접속되도록 되어 있습니다. / This is a learning demo; by default it only listens on your own machine (127.0.0.1).
+이 플러그인은 소스 파일만 읽고 네트워크로 아무것도 보내지 않으며 어떤 포트에서도 대기하지 않습니다. / The plugin only reads source files, sends nothing over the network, and listens on no port.

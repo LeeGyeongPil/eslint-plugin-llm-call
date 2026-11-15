@@ -2,6 +2,8 @@
 
 **English** | [한국어](README.ko.md)
 
+[![npm](https://img.shields.io/npm/v/eslint-plugin-llm-call)](https://www.npmjs.com/package/eslint-plugin-llm-call) [![CI](https://github.com/LeeGyeongPil/eslint-plugin-llm-call/actions/workflows/ci.yml/badge.svg)](https://github.com/LeeGyeongPil/eslint-plugin-llm-call/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 An ESLint plugin that reads your OpenAI and Anthropic SDK calls and flags parameter mistakes that TypeScript accepts but the API answers with HTTP 400: `max_tokens` on a reasoning model, `temperature` where it is rejected, JSON mode without the word "JSON", strict schemas missing `additionalProperties: false`. When it cannot tell what the model is, it stays silent.
 
 ![Practice demo: tsc reports 1 error, llm-call reports 8 problems on the same file](docs/images/01-demo.png)
@@ -31,13 +33,13 @@ What `no-unsupported-param` knows today (snapshot dated 2026-11-16):
 | OpenAI `o*` and `gpt-5` (not `gpt-5-chat*`) | `temperature`, `top_p` |
 | OpenAI `gpt-5.1` and later | `temperature`, `top_p` only when `reasoning_effort` (or `reasoning.effort`) is written as a literal other than `'none'`; silent when it is absent or not a literal |
 | Anthropic SDK 1.x (API version 2026-10-21) | `temperature`, `top_p`, `top_k` |
-| Anthropic SDK 0.x, Opus 4.1 and later | `temperature` and `top_p` together |
+| Anthropic SDK 0.x, Opus 4.1+, Sonnet 4.5+, Haiku 4.5+ | `temperature` and `top_p` together |
 
 ## Requirements
 
 | Host | Version checked | Notes |
 |---|---|---|
-| Node.js | 22.13+ and 24+ (CI runs 22, 24 and 26) | Node 20 is end-of-life; `engines` is `^22.13.0 || >=24` |
+| Node.js | 22.13+ and 24+ (CI runs 22, 24 and 26) | Node 20 is end-of-life; `engines` is `^22.13.0 \|\| >=24` |
 | ESLint | 10.15.0 (peer range `^9.0.0 \|\| ^10.0.0`) | Flat config only |
 | TypeScript files | `@typescript-eslint/parser` 8.72.2 | Needed only to lint `.ts`; plain `.js` works with the default parser |
 | `openai` / `@anthropic-ai/sdk` | 7.57.0 / 1.8.0 (dev dependencies, used by the demo) | Your project needs them only to import; the plugin reads the code, not the packages, except to detect the Anthropic SDK major version |
@@ -97,8 +99,10 @@ After `npx eslint --fix`, the call is changed like this (real output of the comm
 npx eslint-plugin-llm-call check examples/ --lang en
 ```
 
+The `examples/` folder exists only inside a clone of this repository (see [Development](#development)); in your own project pass your own folder, for example `src/`. TypeScript files need `@typescript-eslint/parser` installed.
+
 ![check output listing 8 problems with file, line, rule id and message](docs/images/02-check.png)
-*`check` prints `file:line:column`, the rule id and the message, and exits 1 when anything is found.*
+*`check` prints `file:line:column`, the rule id and the message. Exit codes: 0 = no problems, 1 = problems found (including a file it could not parse), 2 = no matching files or another usage error.*
 
 To read the constraint table (which models reject which parameters, where the row comes from, when it was checked):
 
@@ -212,8 +216,11 @@ This plugin looks at one thing: whether this model accepts this parameter. Other
 - The autofix renames a key only when it is written as a plain name or string. A computed key such as `[k]: 5` is reported without a fix, because rewriting it could point at a name that does not exist.
 - The nesting limit for strict schemas counts the root object as level 0 and reports more than 10 nested levels below it; the documentation does not say clearly whether the root counts, so the less eager reading is used.
 - Only same-file constants are followed. A model defined in another file is Unknown.
-- A client variable that is reassigned later is still treated as its first value, so the rules may report (or autofix) a call made through the new client.
-- `check` run on a file outside the current folder may print `undefined:undefined parse-error`; run it from the project folder. `check` on TypeScript files needs `@typescript-eslint/parser` installed.
+- A client variable reassigned to something that is not provably the same SDK client is treated as Unknown, so calls through it stay silent; reassigning it to another client of the same SDK keeps it checked.
+- `check` skips a file outside the current folder, prints a notice and exits 0; run it from a parent folder that contains the file. `check` on TypeScript files needs `@typescript-eslint/parser` installed.
+- `check` runs only `llm-call` rules. Comments for other rules (`// eslint-disable-next-line no-console`, `/* eslint react/no-danger: 2 */`) are ignored and never counted as problems; `// eslint-disable-next-line llm-call/...` is still honored.
+- Ignored files (under `node_modules/` or `dist/`, or non-JavaScript files) get a short notice on stderr and are not counted.
+- Two parts of the output stay in English even with `--lang ko`: the parser's own detail inside a parse error (for example `Unexpected token ;`), and ESLint's message for an invalid inline rule option.
 
 ## Troubleshooting
 
@@ -223,6 +230,8 @@ This plugin looks at one thing: whether this model accepts this parameter. Other
 | Anthropic `temperature` is never reported | The SDK version was not found in `node_modules` | Install `@anthropic-ai/sdk`, or set `settings.llmCall.anthropicSdkMajor` |
 | `check` skips `.ts` files | The project has no `@typescript-eslint/parser` | `npm install --save-dev @typescript-eslint/parser`, or use ESLint with your own config |
 | Messages stay English in the editor | The language is read when the plugin loads | Start the editor or ESLint with `LLM_CALL_LINT_LANG=ko` |
+| `check` prints `No files matching '...' were found` and exits 2 | The path does not exist, the folder is empty, or the glob matches nothing | Check the path, or run from the project folder |
+| `check` reports `parse-error` | The file has a syntax error, or it is TypeScript read by the default parser | Fix the syntax shown in the parser detail; for `.ts` install `@typescript-eslint/parser` |
 | A row looks wrong for your model | The table is a dated snapshot | Add a row with the same `id` in `settings.llmCall.models`, or add its id to `disable` |
 
 ## Development
@@ -231,8 +240,10 @@ This plugin looks at one thing: whether this model accepts this parameter. Other
 git clone https://github.com/LeeGyeongPil/eslint-plugin-llm-call.git
 cd eslint-plugin-llm-call
 npm install
-npm test          # 147 tests (needs Node 22.12 or newer)
+npm test          # runs the test suite (needs Node 22.13 or newer)
 npm run demo      # practice demo; language follows --lang, LLM_CALL_LINT_LANG, LANG (add -- --lang en|ko)
+npm run verify    # build + tests + demo in one go
+npm run ci:repro  # re-run the CI steps in a clean copy of the files git tracks (working-tree content; run `git add` on new files first)
 npm run smoke:pack
 ```
 
