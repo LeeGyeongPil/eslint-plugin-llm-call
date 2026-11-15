@@ -1,0 +1,74 @@
+[
+  {
+    "id": "openai-chat-reasoning-max-tokens",
+    "provider": "openai",
+    "api": "chat",
+    "match": "^(o[1-9]|gpt-5)",
+    "exclude": "^gpt-5-chat",
+    "forbid": ["max_tokens"],
+    "replace": { "max_tokens": "max_completion_tokens" },
+    "message": "use",
+    "source": "https://developers.openai.com/api/docs/guides/reasoning",
+    "checked": "2026-11-16"
+  },
+  {
+    "id": "openai-responses-max-tokens",
+    "provider": "openai",
+    "api": "responses",
+    "match": ".*",
+    "anyModel": true,
+    "forbid": ["max_tokens"],
+    "replace": { "max_tokens": "max_output_tokens" },
+    "message": "noModelUse",
+    "source": "https://developers.openai.com/api/docs/guides/reasoning",
+    "checked": "2026-11-16"
+  },
+  {
+    "id": "openai-reasoning-sampling",
+    "provider": "openai",
+    "api": "any",
+    "match": "^(o[1-9]|gpt-5(?!\\.\\d))",
+    "exclude": "^gpt-5-chat",
+    "forbid": ["temperature", "top_p"],
+    "message": "reasoning",
+    "source": "https://github.com/getzep/graphiti/issues/874",
+    "checked": "2026-11-16"
+  },
+  {
+    "id": "openai-gpt5x-sampling",
+    "provider": "openai",
+    "api": "any",
+    "match": "^gpt-5\\.\\d",
+    "exclude": "^gpt-5\\.\\d+-chat",
+    "forbid": ["temperature", "top_p"],
+    "allowWhen": [
+      { "path": ["reasoning_effort"], "equals": "none" },
+      { "path": ["reasoning", "effort"], "equals": "none" }
+    ],
+    "message": "effort",
+    "source": "https://braintrust.dev/docs/kb/temperature-parameter-not-supported-in-gpt",
+    "checked": "2026-11-16"
+  },
+  {
+    "id": "anthropic-sdk1-sampling",
+    "provider": "anthropic",
+    "api": "messages",
+    "match": "^claude-",
+    "sdkMajor": 1,
+    "forbid": ["temperature", "top_p", "top_k"],
+    "message": "sdk1",
+    "source": "https://platform.claude.com/docs/en/api/migration-2026-10-21",
+    "checked": "2026-11-16"
+  },
+  {
+    "id": "anthropic-sdk0-sampling-pair",
+    "provider": "anthropic",
+    "api": "messages",
+    "match": "^claude-(opus-4-[1-9]|opus-[5-9]|sonnet-4-5|sonnet-[5-9]|haiku-4-5|haiku-[5-9])",
+    "sdkMajor": 0,
+    "forbidTogether": [["temperature", "top_p"]],
+    "message": "pair",
+    "source": "https://github.com/n8n-io/n8n/issues/18304",
+    "checked": "2026-11-16"
+  }
+]

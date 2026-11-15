@@ -1,0 +1,7 @@
+{
+  "unsupportedKeywords": ["allOf", "not", "dependentRequired", "dependentSchemas", "if", "then", "else"],
+  "maxNestingDepth": 10,
+  "maxProperties": 5000,
+  "source": "https://developers.openai.com/api/docs/guides/structured-outputs",
+  "checked": "2026-11-16"
+}
