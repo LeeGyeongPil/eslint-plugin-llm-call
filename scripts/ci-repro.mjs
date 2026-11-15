@@ -1,4 +1,4 @@
-// Reproduce the CI `test` job locally: copy only the files git would commit (no node_modules, dist, .git)
+// Reproduce the CI `test` job locally: copy only the files git tracks (no node_modules, dist, .git)
 // into a fresh folder, then run the `run:` lines of .github/workflows/ci.yml in the same order.
 // Env: CI_REPRO_DIR (target folder), CI_REPRO_NPM (replace the leading `npm`, e.g. 'npx -y npm@10').
 import { spawnSync } from 'node:child_process';
@@ -14,8 +14,8 @@ function fail(message) {
   process.exit(1);
 }
 
-// 1. Committed (or committable) files only. Deleted-but-tracked files are skipped.
-const listed = spawnSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], { cwd: root, encoding: 'utf8' });
+// 1. Tracked files only (stage new files with `git add` first). Deleted-but-tracked files are skipped.
+const listed = spawnSync('git', ['ls-files', '--cached', '-z'], { cwd: root, encoding: 'utf8' });
 if (listed.status !== 0) fail(`git ls-files failed. Run this inside the git checkout.\n${listed.stderr}`);
 const files = [...new Set(listed.stdout.split('\0').filter(Boolean))].filter((f) => existsSync(join(root, f)));
 

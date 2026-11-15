@@ -1,5 +1,5 @@
 # Key-free: the plugin only reads source code, so tests, demo and pack smoke need no secrets.
-# `npm run ci:repro` runs the same `run:` lines locally from a clean copy of the committed files.
+# `npm run ci:repro` runs the same `run:` lines locally from a clean copy of the files git tracks.
 name: ci
 on:
   push:
@@ -11,6 +11,9 @@ jobs:
   test:
     # vitest 5 needs Node >= 22.12; Node 20 is end-of-life, so the matrix is the supported majors.
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
