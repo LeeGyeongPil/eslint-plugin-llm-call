@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-llm-call",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "ESLint plugin that catches model- and SDK-version-specific parameter mistakes in OpenAI and Anthropic SDK calls before they return HTTP 400.",
   "keywords": [
     "eslint",

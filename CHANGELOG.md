@@ -5,6 +5,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-11-16
+
+### Fixed
+- `check` runs only `llm-call` rules: comments naming rules of other plugins are no longer reported as unused or unknown.
+- `check` translates ESLint's "no files matching" and "all files ignored" errors, notes skipped files on stderr, and reports parse errors with a file, line and `parse-error` label.
+
+### Changed
+- CI job has a 15-minute timeout and read-only `contents` permission.
+- `npm run ci:repro` copies only git-tracked files, so it matches what CI checks out.
+- README: badges, exit-code description, a Troubleshooting row for each new `check` message (same order in English and Korean), updated known limits.
+- `SECURITY.md` describes this plugin instead of a generic demo.
+
 ## [0.1.1] - 2026-11-16
 
 ### Security
