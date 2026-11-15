@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { main } from '../src/cli.js';
+import { describeLintError, main } from '../src/cli.js';
 import { PACKAGE_VERSION } from '../src/core/pkg.js';
 
 async function run(argv: string[], cwd = process.cwd()): Promise<{ code: number; out: string; err: string }> {
@@ -146,5 +146,140 @@ describe('check command', () => {
     const { code, err } = await run(['check', 'nope/'], dir);
     expect(code).toBe(2);
     expect(err.length).toBeGreaterThan(0);
+  });
+});
+
+// v2 Q-17: ESLint's own English text must not leak into the chosen language.
+describe('check command error paths in both languages', () => {
+  // Fragments of ESLint's built-in English messages that used to reach the output untranslated.
+  const ESLINT_ENGLISH = [
+    'No files matching',
+    'were found.',
+    'are ignored',
+    'File ignored',
+    'Parsing error',
+    'Unused eslint-disable',
+    'Definition for rule',
+    'undefined:undefined',
+  ];
+
+  function messy(): string {
+    const dir = mkdtempSync(join(tmpdir(), 'llm-call-cli-err-'));
+    for (const sub of ['src', 'empty', 'dist', join('node_modules', 'x'), 'notes']) {
+      mkdirSync(join(dir, sub), { recursive: true });
+    }
+    writeFileSync(join(dir, 'src', 'broken.js'), 'const a = ;\n');
+    writeFileSync(
+      join(dir, 'src', 'directives.js'),
+      [
+        "import OpenAI from 'openai';",
+        'const c = new OpenAI();',
+        '// eslint-disable-next-line no-console',
+        'console.log(1);',
+        '/* eslint react/no-danger: 2 */',
+        'const y = 2; // eslint-disable-line foo/bar',
+        '// eslint-disable-next-line llm-call/no-unsupported-param',
+        "c.chat.completions.create({ model: 'o4-mini', max_tokens: 5, messages: [] });",
+        "c.chat.completions.create({ model: 'o4-mini', max_tokens: y, messages: [] });",
+        '',
+      ].join('\n'),
+    );
+    writeFileSync(join(dir, 'dist', 'a.js'), 'export const x = 1;\n');
+    writeFileSync(join(dir, 'node_modules', 'x', 'a.js'), 'export const x = 1;\n');
+    writeFileSync(join(dir, 'notes', 'a.md'), '# notes\n');
+    return dir;
+  }
+
+  const cases = [
+    {
+      name: 'missing file',
+      argv: ['check', 'none.js'],
+      code: 2,
+      en: "No files matching 'none.js' were found. Check the path",
+      ko: "'none.js' 에 해당하는 파일이 없습니다",
+    },
+    {
+      name: 'glob with no match',
+      argv: ['check', 'src/**/*.zzz'],
+      code: 2,
+      en: "No files matching 'src/**/*.zzz' were found. Check the path",
+      ko: "'src/**/*.zzz' 에 해당하는 파일이 없습니다",
+    },
+    {
+      name: 'empty folder',
+      argv: ['check', 'empty'],
+      code: 2,
+      en: "No files matching 'empty' were found. Check the path",
+      ko: "'empty' 에 해당하는 파일이 없습니다",
+    },
+    {
+      name: 'folder with only ignored files',
+      argv: ['check', 'dist'],
+      code: 2,
+      en: "Nothing to check under 'dist'",
+      ko: "'dist' 에는 검사할 파일이 없습니다",
+    },
+    {
+      name: 'explicitly named ignored file',
+      argv: ['check', 'node_modules/x/a.js'],
+      code: 0,
+      en: "Skipped 'node_modules/x/a.js': files under node_modules/",
+      ko: "'node_modules/x/a.js' 은(는) 건너뛰었습니다",
+    },
+    {
+      name: 'unsupported file type',
+      argv: ['check', 'notes/a.md'],
+      code: 0,
+      en: "Skipped 'notes/a.md': not a file type",
+      ko: "'notes/a.md' 은(는) 건너뛰었습니다. 이 명령이 검사하는 파일 형식이 아닙니다",
+    },
+    {
+      name: 'parse error',
+      argv: ['check', 'src/broken.js'],
+      code: 1,
+      en: 'src/broken.js:1:11  parse-error  Could not parse this file (parser says: Unexpected token ;)',
+      ko: 'src/broken.js:1:11  parse-error  이 파일을 해석하지 못했습니다(파서 원문: Unexpected token ;)',
+    },
+  ] as const;
+
+  for (const c of cases) {
+    for (const lang of ['en', 'ko'] as const) {
+      it(`${c.name} (${lang}) exits ${c.code} with a ${lang} message`, async () => {
+        const dir = messy();
+        const { code, out, err } = await run([...c.argv, '--lang', lang], dir);
+        const all = `${out}\n${err}`;
+        expect(code).toBe(c.code);
+        expect(all).toContain(c[lang]);
+        if (lang === 'ko') {
+          for (const fragment of ESLINT_ENGLISH) expect(all).not.toContain(fragment);
+        } else {
+          expect(all).not.toContain('undefined:undefined');
+        }
+      });
+    }
+  }
+
+  it('reports only llm-call problems, not comments about rules of other plugins', async () => {
+    const dir = messy();
+    for (const lang of ['en', 'ko'] as const) {
+      const { code, out, err } = await run(['check', 'src/directives.js', '--lang', lang], dir);
+      const all = `${out}\n${err}`;
+      expect(code).toBe(1);
+      // line 8 is disabled for our rule and stays silent; line 9 is reported
+      expect(out).toContain('src/directives.js:9:');
+      expect(out).not.toContain('src/directives.js:8:');
+      expect(out.match(/llm-call\/no-unsupported-param/g)?.length).toBe(1);
+      for (const fragment of ['Unused eslint-disable', 'Definition for rule', 'react/no-danger', 'foo/bar']) {
+        expect(all).not.toContain(fragment);
+      }
+    }
+  });
+
+  it('other ESLint errors keep the original text inside a translated sentence', () => {
+    const error = new Error('Something unexpected');
+    expect(describeLintError(error, 'en')).toBe('ESLint stopped with an error (original message: Something unexpected)');
+    expect(describeLintError(error, 'ko')).toBe('ESLint 가 오류로 멈췄습니다(원문: Something unexpected)');
+    const notFound = Object.assign(new Error('x'), { messageTemplate: 'file-not-found', messageData: { pattern: 'a.js' } });
+    expect(describeLintError(notFound, 'ko')).toContain("'a.js' 에 해당하는 파일이 없습니다");
   });
 });
