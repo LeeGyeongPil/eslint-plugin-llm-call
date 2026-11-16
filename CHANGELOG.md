@@ -5,6 +5,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-16
+
+### Added
+- New rule `llm-call/anthropic-thinking-config`, **enabled as `error` in `recommended`**, so projects that really send these requests will now fail lint (hence a minor version). It reports Anthropic `messages.create` `thinking` settings that the API rejects with a 400, only when the values are literals: `budget_tokens` below 1024; `type: 'enabled'` on Claude 4.7 and later; `type: 'adaptive'` on Claude 4.5 and earlier. `budget_tokens >= max_tokens` is not reported (interleaved thinking). Dynamic values are never reported.
+- Three table rows `anthropic-thinking-budget-min`, `anthropic-thinking-enabled-47`, `anthropic-thinking-adaptive-45` (source and check date per row); switch them off with `settings.llmCall.disable`. Rows have a new optional `thinkingCheck` field, shown by the `table` command.
+- English and Korean messages for the new rule.
+
 ## [0.1.3] - 2026-11-16
 
 ### Fixed

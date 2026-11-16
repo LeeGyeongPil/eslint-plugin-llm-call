@@ -11,7 +11,7 @@ OpenAI·Anthropic SDK 호출을 읽어서, TypeScript 는 통과시키지만 API
 
 ## 무엇을 더해 주나요
 
-- `chat.completions.create`, `responses.create`, Anthropic `messages.create` 의 인자를 검사하는 **규칙 4개**.
+- `chat.completions.create`, `responses.create`, Anthropic `messages.create` 의 인자를 검사하는 **규칙 5개**.
 - **출처가 붙은 모델 표.** [`src/data/models.json`](src/data/models.json) 의 행마다 출처 URL 과 확인 날짜가 있고, ESLint 설정에서 행을 추가·교체·끌 수 있습니다.
 - **의미가 확실할 때만 자동 수정.** `max_tokens` 를 `max_completion_tokens` / `max_output_tokens` 로 바꾸는 것은 autofix, 매개변수 삭제나 값 삽입은 제안(suggestion)만 합니다.
 - **모르면 침묵.** `process.env`, 함수 인자, import 값, 알 수 없는 전개에서 온 모델은 보고하지 않습니다.
@@ -23,6 +23,7 @@ OpenAI·Anthropic SDK 호출을 읽어서, TypeScript 는 통과시키지만 API
 | `llm-call/json-mode-needs-json-word` | 보이는 메시지에 "json" 이 없는 `response_format: { type: 'json_object' }` |
 | `llm-call/strict-schema-shape` | strict 인라인 JSON Schema: `additionalProperties: false` 누락, `required` 가 모든 속성을 담지 않음, 루트 `anyOf`, 미지원 키워드, 10단계 초과 중첩, 5000개 초과 속성 |
 | `llm-call/anthropic-require-max-tokens` | `max_tokens` 가 없는 Anthropic `messages.create` (제안만) |
+| `llm-call/anthropic-thinking-config` | 값이 리터럴일 때 API 가 400 으로 거부하는 Anthropic `messages.create` 의 `thinking` 설정: `budget_tokens` 가 1024 미만, Claude 4.7 이상에 `type: 'enabled'`, Claude 4.5 이하에 `type: 'adaptive'`. `budget_tokens >= max_tokens` 는 interleaved thinking 이 허용하므로 보고하지 않습니다. 표의 `anthropic-thinking-*` 행이며 `settings.llmCall.disable` 로 끌 수 있습니다. 0.2.0 에서 추가, `recommended` 에서 `error` 로 켜집니다(마이너 버전 변경: 실제로 400 이 나는 코드는 이제 lint 에서 실패합니다). |
 
 `no-unsupported-param` 이 지금 아는 것(2026-11-16 기준 스냅샷):
 
@@ -72,7 +73,7 @@ export default [
 ];
 ```
 
-`recommended` 는 규칙 4개를 모두 `error` 로 켭니다. 규칙을 직접 고르려면 `plugins: { 'llm-call': llmCall }` 를 등록하고 원하는 규칙만 적습니다.
+`recommended` 는 규칙 5개를 모두 `error` 로 켭니다. 규칙을 직접 고르려면 `plugins: { 'llm-call': llmCall }` 를 등록하고 원하는 규칙만 적습니다.
 
 묶은 tarball 을 새 프로젝트(ESLint 10.15.0)에 설치해 확인했습니다(`npm run smoke:pack`): `o4-mini` 에 `max_tokens` 가 있는 파일은 `llm-call/no-unsupported-param` 과 함께 종료 코드 1, 깨끗한 파일은 0 입니다.
 

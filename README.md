@@ -11,7 +11,7 @@ An ESLint plugin that reads your OpenAI and Anthropic SDK calls and flags parame
 
 ## What it adds
 
-- **Four rules** that check the arguments of `chat.completions.create`, `responses.create` and Anthropic `messages.create`.
+- **Five rules** that check the arguments of `chat.completions.create`, `responses.create` and Anthropic `messages.create`.
 - **A model table with sources.** Each row of [`src/data/models.json`](src/data/models.json) carries a source URL and a check date, and you can add, replace or switch off rows from your ESLint settings.
 - **Quick fixes only when the meaning is certain.** Renaming `max_tokens` to `max_completion_tokens` / `max_output_tokens` is an autofix; deleting a parameter or inserting a value is only a suggestion.
 - **Silence when unsure.** A model that comes from `process.env`, a function argument, an import or an unknown spread is never reported.
@@ -23,6 +23,7 @@ An ESLint plugin that reads your OpenAI and Anthropic SDK calls and flags parame
 | `llm-call/json-mode-needs-json-word` | `response_format: { type: 'json_object' }` with no "json" in the visible messages |
 | `llm-call/strict-schema-shape` | Strict inline JSON Schemas: missing `additionalProperties: false`, `required` not listing every property, root `anyOf`, unsupported keywords, nesting deeper than 10, more than 5000 properties |
 | `llm-call/anthropic-require-max-tokens` | Anthropic `messages.create` without `max_tokens` (suggestion only) |
+| `llm-call/anthropic-thinking-config` | Anthropic `messages.create` `thinking` settings the API rejects with a 400, when the values are literals: `budget_tokens` below 1024; `type: 'enabled'` on Claude 4.7 and later; `type: 'adaptive'` on Claude 4.5 and earlier. `budget_tokens >= max_tokens` is not reported (interleaved thinking allows it). Rows are `anthropic-thinking-*` in the table and can be switched off with `settings.llmCall.disable`. New in 0.2.0, on as `error` in `recommended` (a minor-version change: code that really gets a 400 will now fail lint). |
 
 What `no-unsupported-param` knows today (snapshot dated 2026-11-16):
 
@@ -72,7 +73,7 @@ export default [
 ];
 ```
 
-`recommended` turns all four rules on as `error`. To pick rules yourself, register `plugins: { 'llm-call': llmCall }` and list the rules you want.
+`recommended` turns all five rules on as `error`. To pick rules yourself, register `plugins: { 'llm-call': llmCall }` and list the rules you want.
 
 The packed tarball was verified in a fresh project with ESLint 10.15.0 (`npm run smoke:pack`): a file with `max_tokens` on `o4-mini` exits 1 with `llm-call/no-unsupported-param`, a clean file exits 0.
 
