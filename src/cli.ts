@@ -64,6 +64,12 @@ function formatTable(rows: string[][]): string {
     .join('\n');
 }
 
+const THINKING_LABEL = {
+  'budget-min': 'thinking.budget_tokens < 1024',
+  enabled: "thinking.type 'enabled'",
+  adaptive: "thinking.type 'adaptive'",
+} as const;
+
 function describeCondition(rule: ModelRule): string {
   const parts: string[] = [];
   if (rule.sdkMajor !== undefined) parts.push(`@anthropic-ai/sdk ${rule.sdkMajor}.x`);
@@ -96,7 +102,11 @@ function tableCommand(parsed: Parsed, lang: Lang, io: Io): number {
     r.id,
     r.anyModel ? '*' : r.exclude ? `${r.match}  !${r.exclude}` : r.match,
     r.api,
-    [...(r.forbid ?? []), ...(r.forbidTogether ?? []).map((g) => g.join(' + '))].join(', '),
+    [
+      ...(r.forbid ?? []),
+      ...(r.forbidTogether ?? []).map((g) => g.join(' + ')),
+      ...(r.thinkingCheck ? [THINKING_LABEL[r.thinkingCheck]] : []),
+    ].join(', '),
     Object.entries(r.replace ?? {})
       .map(([from, to]) => `${from} -> ${to}`)
       .join(', ') || '-',

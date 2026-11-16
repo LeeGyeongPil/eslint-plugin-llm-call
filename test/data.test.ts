@@ -26,7 +26,7 @@ describe('built-in table integrity', () => {
       expect(Number.isNaN(Date.parse(row.checked))).toBe(false);
       expect(() => new RegExp(row.match)).not.toThrow();
       if (row.exclude) expect(() => new RegExp(row.exclude as string)).not.toThrow();
-      expect(row.forbid?.length || row.forbidTogether?.length).toBeGreaterThan(0);
+      expect(row.forbid?.length || row.forbidTogether?.length || (row.thinkingCheck ? 1 : 0)).toBeGreaterThan(0);
     });
   }
 

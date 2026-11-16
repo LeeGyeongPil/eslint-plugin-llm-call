@@ -16,6 +16,8 @@ export interface ModelRule {
   anyModel?: boolean;
   /** Required Anthropic SDK major version (0 or 1). */
   sdkMajor?: 0 | 1;
+  /** Literal `thinking` check handled by the `anthropic-thinking-config` rule. */
+  thinkingCheck?: 'budget-min' | 'enabled' | 'adaptive';
   /** Parameters that are rejected. */
   forbid?: string[];
   /** Groups of parameters that are rejected when sent together. */

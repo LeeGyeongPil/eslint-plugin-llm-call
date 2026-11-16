@@ -1,6 +1,7 @@
 import type { ESLint, Linter } from 'eslint';
 import { PACKAGE_VERSION } from './core/pkg.js';
 import anthropicRequireMaxTokens from './rules/anthropic-require-max-tokens.js';
+import anthropicThinkingConfig from './rules/anthropic-thinking-config.js';
 import jsonModeNeedsJsonWord from './rules/json-mode-needs-json-word.js';
 import noUnsupportedParam from './rules/no-unsupported-param.js';
 import strictSchemaShape from './rules/strict-schema-shape.js';
@@ -12,6 +13,7 @@ const rules = {
   'json-mode-needs-json-word': jsonModeNeedsJsonWord,
   'strict-schema-shape': strictSchemaShape,
   'anthropic-require-max-tokens': anthropicRequireMaxTokens,
+  'anthropic-thinking-config': anthropicThinkingConfig,
 };
 
 const plugin = {
@@ -28,6 +30,7 @@ plugin.configs.recommended = {
     'llm-call/json-mode-needs-json-word': 'error',
     'llm-call/strict-schema-shape': 'error',
     'llm-call/anthropic-require-max-tokens': 'error',
+    'llm-call/anthropic-thinking-config': 'error',
   },
 };
 

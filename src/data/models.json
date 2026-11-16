@@ -70,5 +70,33 @@
     "message": "pair",
     "source": "https://github.com/n8n-io/n8n/issues/18304",
     "checked": "2026-11-16"
+  },
+  {
+    "id": "anthropic-thinking-budget-min",
+    "provider": "anthropic",
+    "api": "messages",
+    "match": ".*",
+    "anyModel": true,
+    "thinkingCheck": "budget-min",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/extended-thinking",
+    "checked": "2026-11-16"
+  },
+  {
+    "id": "anthropic-thinking-enabled-47",
+    "provider": "anthropic",
+    "api": "messages",
+    "match": "^claude-(?:opus|sonnet|haiku)-(?:4-[7-9]|[5-9]|[1-9]\\d)(?!\\d)",
+    "thinkingCheck": "enabled",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/extended-thinking",
+    "checked": "2026-11-16"
+  },
+  {
+    "id": "anthropic-thinking-adaptive-45",
+    "provider": "anthropic",
+    "api": "messages",
+    "match": "^claude-(?:(?:opus|sonnet|haiku)-4(?:-[0-5](?!\\d)|-\\d{8}(?!\\d)|$)|3-7-sonnet)",
+    "thinkingCheck": "adaptive",
+    "source": "https://platform.claude.com/docs/en/build-with-claude/extended-thinking",
+    "checked": "2026-11-16"
   }
 ]

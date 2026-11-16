@@ -34,6 +34,13 @@ const en = {
   // anthropic-require-max-tokens
   'rule.maxTokensRequired': "Anthropic 'messages.create' requires 'max_tokens'.",
   'rule.suggestAddMaxTokens': "Add 'max_tokens: 1024'.",
+  // anthropic-thinking-config
+  'rule.thinkingBudgetTooSmall':
+    "'thinking.budget_tokens' is {{value}}; the API rejects values below {{min}} with a 400.",
+  'rule.thinkingEnabledRejected':
+    "Model '{{model}}' does not support thinking type 'enabled' (budget_tokens) and answers with a 400; use type 'adaptive'.",
+  'rule.thinkingAdaptiveRejected':
+    "Model '{{model}}' does not support thinking type 'adaptive' and answers with a 400; use type 'enabled' with 'budget_tokens'.",
 
   // CLI: table
   'table.id': 'Id',
@@ -118,6 +125,12 @@ const ko: Record<MessageKey, string> = {
   'rule.tooManyProperties': 'strict 스키마: 전체 속성이 {{max}}개를 넘습니다 ({{count}}개).',
   'rule.maxTokensRequired': "Anthropic 'messages.create' 는 'max_tokens'가 필수입니다.",
   'rule.suggestAddMaxTokens': "'max_tokens: 1024' 추가.",
+  'rule.thinkingBudgetTooSmall':
+    "'thinking.budget_tokens' 가 {{value}}입니다. API 는 {{min}} 미만 값을 400 으로 거부합니다.",
+  'rule.thinkingEnabledRejected':
+    "모델 '{{model}}'은(는) thinking type 'enabled'(budget_tokens)를 지원하지 않아 400 으로 답합니다. type 'adaptive'를 쓰세요.",
+  'rule.thinkingAdaptiveRejected':
+    "모델 '{{model}}'은(는) thinking type 'adaptive'를 지원하지 않아 400 으로 답합니다. 'budget_tokens'와 함께 type 'enabled'를 쓰세요.",
 
   'table.id': 'ID',
   'table.model': '모델',
