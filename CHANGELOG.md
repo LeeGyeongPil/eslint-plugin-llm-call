@@ -5,6 +5,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-11-16
+
+### Fixed
+- Packaging keeps `dist/cli.js` executable (mode 0755), so the `npx` binary starts.
+
+### Changed
+- `smoke-pack` is more robust: it checks the packed files and the CLI start.
+- `ci:repro` has a committed-only mode (`CI_REPRO_COMMITTED=1`) that ignores uncommitted changes.
+- Added a test that keeps the CI config in line with the repro and pack scripts.
+- README: known limit for call arguments written as `{ ... } as const`, `satisfies` or a variable.
+
 ## [0.1.2] - 2026-11-16
 
 ### Fixed
