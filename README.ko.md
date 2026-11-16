@@ -135,7 +135,7 @@ npx eslint-plugin-llm-call table --provider anthropic --json
 - `AzureOpenAI` (배포 이름은 모델 ID 가 아님)
 - OpenAI·Anthropic SDK 가 아닌 클라이언트(예: SMS 클라이언트)의 `client.messages.create`
 
-플러그인이 따라가는 것은 문자열 리터럴, 표현식 없는 템플릿 리터럴, 같은 파일의 `const` 값, `as const` / `satisfies`, 같은 파일 `const` 객체의 전개뿐입니다.
+플러그인이 따라가는 것은 문자열 리터럴, 표현식 없는 템플릿 리터럴, 같은 파일의 `const` 값, `as const` / `satisfies`, 같은 파일 `const` 객체의 전개뿐입니다. 이는 호출 옵션 객체 안의 값(예: `model`)에 적용됩니다. 옵션 객체 자체는 호출 위치에 직접 써야 합니다(알려진 한계 참고).
 
 ## 설정
 
@@ -218,6 +218,7 @@ flowchart LR
 - 자동 수정은 키가 일반 이름이나 문자열로 적혀 있을 때만 이름을 바꿉니다. `[k]: 5` 같은 계산된 키는 보고만 하고 고치지 않습니다. 고치면 존재하지 않는 이름을 가리킬 수 있기 때문입니다.
 - strict 스키마 중첩 한도는 루트 객체를 0단계로 세고 그 아래 10단계를 넘으면 보고합니다. 문서가 루트 포함 여부를 분명히 밝히지 않아 덜 공격적인 해석을 택했습니다.
 - 같은 파일 상수만 따라갑니다. 다른 파일에 정의된 모델은 Unknown 입니다.
+- 호출 인자는 인라인 객체 리터럴이어야 합니다. `{ ... } as const`, `{ ... } satisfies T` 로 쓰거나 변수로 넘기면(`const p = { ... }; client.create(p)`) 규칙은 침묵합니다. `as const`·`satisfies`·`const` 는 인라인 객체 안의 값에만 따라갑니다.
 - 같은 SDK 클라이언트임을 알 수 없는 값으로 다시 할당된 클라이언트 변수는 Unknown 이 되어 그 호출은 침묵합니다. 같은 SDK 의 다른 클라이언트로 다시 할당하면 계속 검사합니다.
 - 현재 폴더 밖 파일은 `check` 가 건너뛰고 안내만 낸 뒤 종료 코드 0 으로 끝납니다. 그 파일이 들어 있는 상위 폴더에서 실행하세요. TypeScript 파일 `check` 는 `@typescript-eslint/parser` 설치가 필요합니다.
 - `check` 는 `llm-call` 규칙만 돌립니다. 다른 규칙용 주석(`// eslint-disable-next-line no-console`, `/* eslint react/no-danger: 2 */`)은 무시하고 문제로 세지 않습니다. `// eslint-disable-next-line llm-call/...` 는 그대로 지킵니다.
@@ -245,6 +246,7 @@ npm install
 npm test          # 테스트 실행 (Node 22.13 이상 필요)
 npm run demo      # 연습용 데모. 언어는 --lang, LLM_CALL_LINT_LANG, LANG 순 (-- --lang en|ko 로 지정)
 npm run verify    # 빌드 + 테스트 + 데모를 한 번에
+CI_REPRO_COMMITTED=1 npm run ci:repro  # 커밋된 파일만으로 CI 단계를 다시 실행(커밋하지 않은 변경은 무시)
 npm run ci:repro  # git 이 추적하는 파일(작업 폴더 내용, 새 파일은 먼저 `git add`)만 깨끗한 폴더에 복사해 CI 단계를 다시 실행
 npm run smoke:pack
 ```

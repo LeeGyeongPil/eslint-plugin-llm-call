@@ -133,7 +133,7 @@ Messages and CLI output are English or Korean. Order of choice: `--lang en|ko`, 
 - `AzureOpenAI` (a deployment name is not a model id);
 - `client.messages.create` where `client` is not from the OpenAI or Anthropic SDK (for example an SMS client).
 
-The plugin only follows string literals, template literals without expressions, same-file `const` values, `as const` / `satisfies`, and spreads of same-file `const` objects.
+The plugin only follows string literals, template literals without expressions, same-file `const` values, `as const` / `satisfies`, and spreads of same-file `const` objects. These apply to values inside the call's options object (for example `model`); the options object itself must be written inline at the call site (see Known limits).
 
 ## Settings
 
@@ -216,6 +216,7 @@ This plugin looks at one thing: whether this model accepts this parameter. Other
 - The autofix renames a key only when it is written as a plain name or string. A computed key such as `[k]: 5` is reported without a fix, because rewriting it could point at a name that does not exist.
 - The nesting limit for strict schemas counts the root object as level 0 and reports more than 10 nested levels below it; the documentation does not say clearly whether the root counts, so the less eager reading is used.
 - Only same-file constants are followed. A model defined in another file is Unknown.
+- The call argument must be an inline object literal. If it is written as `{ ... } as const` or `{ ... } satisfies T`, or passed as a variable (`const p = { ... }; client.create(p)`), the rules stay silent. `as const`, `satisfies` and `const` are followed only for values inside the inline object.
 - A client variable reassigned to something that is not provably the same SDK client is treated as Unknown, so calls through it stay silent; reassigning it to another client of the same SDK keeps it checked.
 - `check` skips a file outside the current folder, prints a notice and exits 0; run it from a parent folder that contains the file. `check` on TypeScript files needs `@typescript-eslint/parser` installed.
 - `check` runs only `llm-call` rules. Comments for other rules (`// eslint-disable-next-line no-console`, `/* eslint react/no-danger: 2 */`) are ignored and never counted as problems; `// eslint-disable-next-line llm-call/...` is still honored.
@@ -243,6 +244,7 @@ npm install
 npm test          # runs the test suite (needs Node 22.13 or newer)
 npm run demo      # practice demo; language follows --lang, LLM_CALL_LINT_LANG, LANG (add -- --lang en|ko)
 npm run verify    # build + tests + demo in one go
+CI_REPRO_COMMITTED=1 npm run ci:repro  # re-run the CI steps from committed files only (ignores uncommitted changes)
 npm run ci:repro  # re-run the CI steps in a clean copy of the files git tracks (working-tree content; run `git add` on new files first)
 npm run smoke:pack
 ```
